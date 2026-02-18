@@ -1,134 +1,204 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { supabase } from '@/lib/supabase'
-import { LineChart, ArrowRight, CheckCircle, AlertCircle } from 'lucide-react'
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Mail, TrendingUp, ShieldCheck, Zap, Activity } from 'lucide-react';
 
 export default function Home() {
-  const [email, setEmail] = useState('')
-  const [ticker, setTicker] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle')
+  const [email, setEmail] = useState('');
+  const [ticker, setTicker] = useState('');
+  const [shares, setShares] = useState('1'); // Default to 1 share
+  const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setStatus('idle')
+    e.preventDefault();
+    setStatus('loading');
 
-    if (!email || !ticker) return
+    // Basic Validation
+    if (!email || !ticker) {
+      setErrorMessage('Please fill in all fields.');
+      setStatus('error');
+      return;
+    }
+
+    // NEW: Block negative shares
+    if (parseFloat(shares) <= 0) {
+      setErrorMessage('You must own at least a fraction of a share!');
+      setStatus('error');
+      return;
+    }
 
     try {
-      // 1. Insert into Supabase
+      // 1. Check if user already exists
+      const { data: existingSubscription } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('email', email)
+        .eq('ticker', ticker)
+        .single();
+
+      if (existingSubscription) {
+        setErrorMessage('You are already tracking this stock!');
+        setStatus('error');
+        return;
+      }
+
+      // 2. Insert new subscription with SHARES
       const { error } = await supabase
         .from('subscriptions')
-        .insert([{ email, ticker: ticker.toUpperCase(), active: true }])
+        .insert([
+          { 
+            email, 
+            ticker: ticker.toUpperCase(), 
+            shares: parseFloat(shares) || 1, // Send shares to DB
+            active: true 
+          }
+        ]);
 
-      if (error) throw error
+      if (error) throw error;
 
-      // 2. Success State
-      setStatus('success')
-      setEmail('')
-      setTicker('')
-    } catch (error) {
-      console.error('Error:', error)
-      setStatus('error')
-    } finally {
-      setLoading(false)
+      setStatus('success');
+      setEmail('');
+      setTicker('');
+      setShares('1');
+    } catch (error: any) {
+      console.error('Error:', error);
+      setErrorMessage(error.message || 'Something went wrong. Please try again.');
+      setStatus('error');
     }
-  }
+  };
 
   return (
-    <div className="min-h-screen bg-black text-white selection:bg-green-500 selection:text-black">
-      {/* Grid Background Effect */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
-
-      <main className="relative flex flex-col items-center justify-center min-h-screen px-4 text-center">
-        
-        {/* Badge */}
-        <div className="mb-8 inline-flex items-center rounded-full border border-green-500/30 bg-green-500/10 px-3 py-1 text-sm text-green-400 backdrop-blur-xl">
-          <span className="flex h-2 w-2 rounded-full bg-green-500 mr-2 animate-pulse"></span>
-          Now Live: Alpha Seek v1.0
+    <main className="min-h-screen bg-[#050505] text-white selection:bg-green-500/30">
+      
+      {/* Navigation */}
+      <nav className="flex items-center justify-between px-6 py-6 max-w-7xl mx-auto">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
+            <span className="font-bold font-mono text-white">N</span>
+          </div>
         </div>
+        <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full">
+          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+          <span className="text-xs font-medium text-green-400">Now Live: Alpha Seek v2.0</span>
+        </div>
+      </nav>
 
-        {/* Hero Text */}
-        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-gradient-to-b from-white to-gray-400 bg-clip-text text-transparent">
+      {/* Hero Section */}
+      <section className="flex flex-col items-center justify-center text-center px-4 mt-20 mb-32 relative">
+        {/* Background Grids */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)] pointer-events-none"></div>
+        
+        <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60 z-10">
           Financial Intelligence, <br />
-          Automated.
+          <span className="text-white">Automated.</span>
         </h1>
         
-        <p className="text-lg md:text-xl text-gray-400 max-w-2xl mb-12">
-          Wake up to a deep-dive analysis of your favorite stock. 
-          Powered by Multi-Agent AI, Goldman Sachs logic, and real-time data.
+        <p className="text-lg text-white/40 max-w-2xl mb-12 z-10">
+          Wake up to a deep-dive analysis of your favorite stock. Powered by Multi-Agent AI, Goldman Sachs logic, and real-time data.
         </p>
 
-        {/* Form Card */}
-        <div className="w-full max-w-md bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-xl shadow-2xl">
-          
+        {/* Input Card */}
+        <div className="w-full max-w-md bg-white/5 border border-white/10 rounded-2xl p-2 shadow-2xl backdrop-blur-sm z-10">
           {status === 'success' ? (
-            <div className="flex flex-col items-center justify-center py-8 text-green-400">
-              <CheckCircle className="w-16 h-16 mb-4" />
-              <h3 className="text-2xl font-bold mb-2">You're in.</h3>
-              <p className="text-gray-400">Watch your inbox at 6:00 AM.</p>
+            <div className="p-8 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300">
+              <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
+                <ShieldCheck className="w-8 h-8 text-green-400" />
+              </div>
+              <h3 className="text-2xl font-semibold text-white mb-2">You're in.</h3>
+              <p className="text-white/50 mb-6">Watch your inbox at 6:00 AM.</p>
               <button 
                 onClick={() => setStatus('idle')}
-                className="mt-6 text-sm text-white underline hover:text-green-400"
+                className="text-sm text-white/70 hover:text-white underline"
               >
                 Add another stock
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4 text-left">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@company.com"
-                  className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">Stock Ticker</label>
+            <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
+              <div className="space-y-1 text-left">
+                <label className="text-xs font-medium text-white/50 ml-1">Daily Briefing Destination</label>
                 <div className="relative">
-                  <input
-                    type="text"
-                    required
-                    value={ticker}
-                    onChange={(e) => setTicker(e.target.value)}
-                    placeholder="e.g. NVDA"
-                    className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all uppercase"
+                  <Mail className="absolute left-4 top-3.5 w-5 h-5 text-white/30" />
+                  <input 
+                    type="email" 
+                    placeholder="name@company.com"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
-                  <LineChart className="absolute right-3 top-3.5 w-5 h-5 text-gray-600" />
                 </div>
               </div>
 
-              <button
+              <div className="flex gap-2">
+                <div className="space-y-1 text-left flex-1">
+                  <label className="text-xs font-medium text-white/50 ml-1">Asset</label>
+                  <div className="relative">
+                    <Activity className="absolute left-4 top-3.5 w-5 h-5 text-white/30" />
+                    <input 
+                      type="text" 
+                      placeholder="Ticker (e.g. NVDA)"
+                      className="w-full bg-white/5 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all uppercase"
+                      value={ticker}
+                      onChange={(e) => setTicker(e.target.value.toUpperCase())}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1 text-left w-28">
+                  <label className="text-xs font-medium text-white/50 ml-1">Shares Owned</label>
+                  <input 
+                    type="number" 
+                    min="0.01"
+                    step="any"
+                    placeholder="1"
+                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all text-center"
+                    value={shares}
+                    onChange={(e) => setShares(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <button 
                 type="submit"
-                disabled={loading}
-                className="w-full bg-white text-black font-bold py-3 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center gap-2 group disabled:opacity-50"
+                disabled={status === 'loading'}
+                className="w-full bg-white text-black font-semibold rounded-lg py-3 mt-2 hover:bg-white/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                {loading ? 'Processing...' : 'Start Tracking'}
-                {!loading && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+                {status === 'loading' ? (
+                  <span className="animate-pulse">Syncing...</span>
+                ) : (
+                  <>
+                    <span>Start Tracking</span>
+                    <TrendingUp className="w-4 h-4" />
+                  </>
+                )}
               </button>
 
               {status === 'error' && (
-                <div className="flex items-center gap-2 text-red-400 text-sm mt-2 justify-center">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>Something went wrong. Try again.</span>
-                </div>
+                <p className="text-red-400 text-sm text-center mt-2">{errorMessage}</p>
               )}
             </form>
           )}
         </div>
 
-        {/* Footer */}
-        <div className="mt-16 text-sm text-gray-600">
-          Built with LangGraph, Llama 3, and Next.js
+        {/* Social Proof / Footer */}
+        <div className="mt-12 flex items-center gap-6 text-white/20">
+          <div className="flex items-center gap-2">
+            <Zap className="w-4 h-4" />
+            <span className="text-sm">Instant Setup</span>
+          </div>
+          <div className="w-1 h-1 bg-white/20 rounded-full"></div>
+          <div className="flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4" />
+            <span className="text-sm">Bank-Grade Privacy</span>
+          </div>
         </div>
-      </main>
-    </div>
-  )
+      </section>
+
+      <footer className="w-full py-6 text-center text-white/10 text-sm">
+        <p>Built with LangGraph, Llama 3, and Next.js</p>
+      </footer>
+    </main>
+  );
 }

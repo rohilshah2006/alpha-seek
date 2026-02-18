@@ -1,14 +1,13 @@
-import operator
-from typing import Annotated, List, TypedDict, Dict, Any, Optional
+from typing import TypedDict, List, Dict, Any
 
-# This is the "Shared Whiteboard" for our Agent
 class AgentState(TypedDict):
-    ticker: str                # Input: The stock user wants (e.g., "AAPL")
     user_email: str
-    news_results: list[str]    # Internal: The raw news articles found
-    financial_data: Dict[str, Any]
-    chart_path: Optional[str]
-    analysis: str              # Internal: The LLM's summary of the news
-    sentiment_score: int       # Internal: A score 1-10
-    final_report: str          # Output: The final email body
+    portfolio: List[Dict[str, Any]]      # Input: [{'ticker': 'AAPL', 'shares': 10}, ...]
+    
+    news_results: List[str]              # Internal: Broad market news
+    portfolio_data: List[Dict[str, Any]] # Internal: Financials for each stock
+    total_value: float                   # Internal: Sum of all shares * price
+    chart_paths: List[str]               # Internal: List of image files to attach
+    
+    final_report: str                    # Output: HTML email body
     retry_count: int

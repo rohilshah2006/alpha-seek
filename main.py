@@ -11,7 +11,7 @@ key = os.getenv("SUPABASE_SERVICE_KEY")
 supabase: Client = create_client(url, key)
 
 if __name__ == "__main__":
-    print("--- Starting Alpha Seek Agent (SaaS Mode) ---")
+    print("--- Starting Alpha Seek Agent (Portfolio Mode) ---")
     
     # 1. Fetch all ACTIVE subscriptions
     print("📡 Fetching active subscriptions from Supabase...")
@@ -20,28 +20,39 @@ if __name__ == "__main__":
     
     if not subscriptions:
         print("⚠️ No active subscriptions found in database.")
+        exit(0)
     else:
-        print(f"✅ Found {len(subscriptions)} tasks.")
+        print(f"✅ Found {len(subscriptions)} total active tickers.")
 
-    # 2. Loop through each user request
+    # 2. GROUP BY USER
+    user_portfolios = {}
     for sub in subscriptions:
-        user_email = sub['email']
-        ticker = sub['ticker']
+        email = sub['email']
+        if email not in user_portfolios:
+            user_portfolios[email] = []
         
+        user_portfolios[email].append({
+            "ticker": sub['ticker'],
+            "shares": float(sub['shares'])
+        })
+
+    print(f"📊 Processing portfolios for {len(user_portfolios)} unique users...\n")
+
+    # 3. Loop through each USER (not each ticker)
+    for email, portfolio in user_portfolios.items():
         try:
-            print(f"\n--- 🤖 Processing: {ticker} for {user_email} ---")
+            print(f"--- 🤖 Processing Portfolio for {email} ---")
             
-            # Run the agent with the user's specific data
             inputs = {
-                "ticker": ticker, 
-                "user_email": user_email, 
+                "user_email": email, 
+                "portfolio": portfolio, 
                 "retry_count": 0
             }
             run_agent(inputs)
             
-            print(f"✅ Finished task for {user_email}")
+            print(f"✅ Finished sending to {email}")
             
         except Exception as e:
-            print(f"❌ Failed to process {ticker}: {e}")
+            print(f"❌ Failed to process {email}: {e}")
             
     print("\n--- Batch Job Complete ---")
