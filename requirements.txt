@@ -1,0 +1,10 @@
+langgraph
+langchain-groq
+langchain-community
+tavily-python
+yfinance
+python-dotenv
+yagmail
+supabase
+markdown
+matplotlib
