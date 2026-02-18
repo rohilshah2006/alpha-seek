@@ -83,7 +83,7 @@ def analyze_node(state: AgentState):
     cards_html = ""
     # Build the personalized management link (Replace with your actual Vercel URL)
     user_uuid = state["portfolio"][0].get("uuid", "")
-    manage_url = f"https://https://alpha-seek-delta.vercel.app/manage?id={user_uuid}"
+    manage_url = f"https://alpha-seek-delta.vercel.app/manage?id={user_uuid}"
     
     # 1. Loop through each stock to get a specific AI Verdict
     for stock in portfolio_data:

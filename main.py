@@ -33,7 +33,8 @@ if __name__ == "__main__":
         
         user_portfolios[email].append({
             "ticker": sub['ticker'],
-            "shares": float(sub['shares'])
+            "shares": float(sub['shares']),
+            "uuid": sub.get('uuid')
         })
 
     print(f"📊 Processing portfolios for {len(user_portfolios)} unique users...\n")
