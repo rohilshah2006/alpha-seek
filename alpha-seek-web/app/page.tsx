@@ -1,15 +1,51 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Mail, TrendingUp, ShieldCheck, Zap, Activity } from 'lucide-react';
 
 export default function Home() {
+  const router = useRouter();
+
   const [email, setEmail] = useState('');
   const [ticker, setTicker] = useState('');
   const [shares, setShares] = useState('1'); // Default to 1 share
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+
+  const [isManageMode, setIsManageMode] = useState(false);
+  const [manageEmail, setManageEmail] = useState('');
+  const [manageStatus, setManageStatus] = useState<'idle' | 'loading' | 'error'>('idle');
+  const [manageError, setManageError] = useState('');
+
+  const handleManageAccess = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setManageStatus('loading');
+
+    try {
+      // Look for at least one active stock belonging to this email
+      const { data, error } = await supabase
+        .from('subscriptions')
+        .select('uuid')
+        .eq('email', manageEmail)
+        .eq('active', true)
+        .limit(1)
+        .single();
+
+      if (error || !data) {
+        setManageError('No active portfolio found for this email.');
+        setManageStatus('error');
+        return;
+      }
+
+      // If found, teleport them to the manage page using their secret ID!
+      router.push(`/manage?id=${data.uuid}`);
+    } catch (err) {
+      setManageError('Something went wrong. Please try again.');
+      setManageStatus('error');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,9 +115,24 @@ export default function Home() {
             <span className="font-bold font-mono text-white">N</span>
           </div>
         </div>
+        
         <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full">
           <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
           <span className="text-xs font-medium text-green-400">Now Live: Alpha Seek v2.0</span>
+        </div>
+
+      {/* NEW: Right side of navbar */}
+        <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-2 bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full">
+            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <span className="text-xs font-medium text-green-400">Now Live: Alpha Seek v2.0</span>
+          </div>
+          <button 
+            onClick={() => setIsManageMode(!isManageMode)}
+            className="text-sm font-medium text-white/70 hover:text-white transition-colors"
+          >
+            {isManageMode ? 'Back to Sign Up' : 'Manage Portfolio'}
+          </button>
         </div>
       </nav>
 
@@ -100,8 +151,43 @@ export default function Home() {
         </p>
 
         {/* Input Card */}
-        <div className="w-full max-w-md bg-white/5 border border-white/10 rounded-2xl p-2 shadow-2xl backdrop-blur-sm z-10">
-          {status === 'success' ? (
+        <div className="w-full max-w-md bg-white/5 border border-white/10 rounded-2xl p-2 shadow-2xl backdrop-blur-sm z-10 transition-all duration-300">
+          
+          {isManageMode ? (
+            /* --- MANAGE MODE UI --- */
+            <form onSubmit={handleManageAccess} className="p-6 flex flex-col gap-4 animate-in fade-in zoom-in duration-300">
+              <div className="text-center mb-2">
+                <h3 className="text-xl font-semibold text-white">Access Portfolio</h3>
+                <p className="text-sm text-white/50 mt-1">Enter your email to manage your assets.</p>
+              </div>
+              
+              <div className="relative">
+                <Mail className="absolute left-4 top-3.5 w-5 h-5 text-white/30" />
+                <input 
+                  type="email" 
+                  placeholder="name@company.com"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-12 pr-4 py-3 text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-green-500/50 transition-all"
+                  value={manageEmail}
+                  onChange={(e) => setManageEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              <button 
+                type="submit"
+                disabled={manageStatus === 'loading'}
+                className="w-full bg-white text-black font-semibold rounded-lg py-3 mt-2 hover:bg-white/90 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {manageStatus === 'loading' ? 'Searching...' : 'Find Portfolio'}
+                {manageStatus !== 'loading' && <ArrowRight className="w-4 h-4" />}
+              </button>
+
+              {manageStatus === 'error' && (
+                <p className="text-red-400 text-sm text-center mt-2">{manageError}</p>
+              )}
+            </form>
+          ) : status === 'success' ? (
+            /* --- EXISTING SUCCESS UI --- */
             <div className="p-8 flex flex-col items-center justify-center text-center animate-in fade-in zoom-in duration-300">
               <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mb-4">
                 <ShieldCheck className="w-8 h-8 text-green-400" />
@@ -116,6 +202,7 @@ export default function Home() {
               </button>
             </div>
           ) : (
+            /* --- EXISTING SIGNUP UI --- */
             <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
               <div className="space-y-1 text-left">
                 <label className="text-xs font-medium text-white/50 ml-1">Daily Briefing Destination</label>
