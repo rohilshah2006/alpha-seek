@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { ShieldCheck, Trash2, Activity } from 'lucide-react';
+import { ShieldCheck, Trash2, Activity, Plus } from 'lucide-react';
 
 function ManageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const id = searchParams.get('id'); // Gets the secret UUID from the link
   
   const [stocks, setStocks] = useState<any[]>([]);
@@ -63,15 +64,32 @@ function ManageContent() {
 
   return (
     <div className="w-full max-w-2xl mx-auto bg-white/5 border border-white/10 rounded-2xl p-8 shadow-2xl backdrop-blur-sm z-10 mt-20">
-      <div className="flex items-center gap-3 mb-8 border-b border-white/10 pb-6">
-        <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-          <ShieldCheck className="w-6 h-6 text-green-400" />
+      
+      {/* --- UPDATED HEADER SECTION --- */}
+      <div className="flex items-center justify-between mb-8 border-b border-white/10 pb-6">
+        
+        {/* Left Side: Icon and Title */}
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+            <ShieldCheck className="w-6 h-6 text-green-400" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-semibold text-white">Manage Portfolio</h2>
+            <p className="text-white/50">{email}</p>
+          </div>
         </div>
-        <div>
-          <h2 className="text-2xl font-semibold text-white">Manage Portfolio</h2>
-          <p className="text-white/50">{email}</p>
-        </div>
+        
+        {/* Right Side: The New Plus Button */}
+        <button 
+          onClick={() => router.push(`/?email=${encodeURIComponent(email)}`)}
+          className="bg-white/10 hover:bg-white/20 p-2 rounded-full transition-all text-white/70 hover:text-white"
+          title="Add New Asset"
+        >
+          <Plus className="w-6 h-6" />
+        </button>
+
       </div>
+      {/* --- END HEADER SECTION --- */}
 
       {stocks.length === 0 ? (
         <p className="text-white/50 text-center py-8">You have no active subscriptions.</p>

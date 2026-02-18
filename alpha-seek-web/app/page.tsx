@@ -1,12 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Mail, TrendingUp, ShieldCheck, Zap, Activity, ArrowRight } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
+
+useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const emailFromUrl = params.get('email');
+    if (emailFromUrl) {
+      setEmail(emailFromUrl);
+    }
+  }, []);
 
   const [email, setEmail] = useState('');
   const [ticker, setTicker] = useState('');
