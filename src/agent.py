@@ -1,5 +1,7 @@
 import os
 import json
+import yfinance as yf
+import pandas as pd
 from typing import TypedDict, Literal
 from dotenv import load_dotenv
 
@@ -39,31 +41,64 @@ def data_collection_node(state: AgentState):
     chart_paths = []
     total_value = 0.0
 
-    print(f"📊 Fetching data & charts for {len(portfolio)} assets...")
+    print(f"📊 Fetching data, charts, and calculating Quant indicators for {len(portfolio)} assets...")
     
     for item in portfolio:
         ticker = item["ticker"]
         shares = item["shares"]
         
-        # Get Data & Chart
+        # Get Standard Data & Chart
         data = get_financial_metrics(ticker)
         chart_file = generate_stock_chart(ticker)
         if chart_file:
             chart_paths.append(chart_file)
+            
+        # --- NEW: CALCULATE TECHNICAL INDICATORS ---
+        try:
+            stock = yf.Ticker(ticker)
+            hist = stock.history(period="1y") # Need 1 year for the 200-day average
+            
+            if not hist.empty and len(hist) > 200:
+                close_px = hist['Close']
+                
+                # Moving Averages
+                sma_50 = close_px.rolling(window=50).mean().iloc[-1]
+                sma_200 = close_px.rolling(window=200).mean().iloc[-1]
+                
+                # RSI (14-Day)
+                delta = close_px.diff()
+                gain = (delta.where(delta > 0, 0)).rolling(window=14).mean()
+                loss = (-delta.where(delta < 0, 0)).rolling(window=14).mean()
+                rs = gain / loss
+                rsi = 100 - (100 / (1 + rs))
+                rsi_14 = rsi.iloc[-1]
+                
+                quant_data = {
+                    "sma_50": f"${round(sma_50, 2)}",
+                    "sma_200": f"${round(sma_200, 2)}",
+                    "rsi": round(rsi_14, 2)
+                }
+            else:
+                quant_data = {"sma_50": "N/A", "sma_200": "N/A", "rsi": "N/A"}
+        except Exception as e:
+            print(f"⚠️ Quant error for {ticker}: {e}")
+            quant_data = {"sma_50": "N/A", "sma_200": "N/A", "rsi": "N/A"}
+        # ---------------------------------------------
             
         # Calculate Value
         price = data.get("current_price") or 0
         value = price * shares
         total_value += value
         
-        # Save EVERYTHING, including PE and Target
+        # Save EVERYTHING
         portfolio_data.append({
             "ticker": ticker,
             "shares": shares,
             "price": price,
             "value": value,
             "pe_ratio": data.get("pe_ratio", "N/A"),
-            "target_mean_price": data.get("target_mean_price", "N/A")
+            "target_mean_price": data.get("target_mean_price", "N/A"),
+            "quant": quant_data # Store our new math
         })
         
     return {
@@ -78,39 +113,48 @@ def analyze_node(state: AgentState):
     portfolio_data = state.get("portfolio_data", [])
     total_value = state.get("total_value", 0)
     
-    print("🧠 Synthesizing Portfolio Report (Goldman Style)...")
+    print("🧠 Synthesizing Deep-Dive Quant Reports...")
 
     cards_html = ""
-    # Build the personalized management link (Replace with your actual Vercel URL)
+    # Your Vercel link is safe right here!
     user_uuid = state["portfolio"][0].get("uuid", "")
     manage_url = f"https://alpha-seek-delta.vercel.app/manage?id={user_uuid}"
     
-    # 1. Loop through each stock to get a specific AI Verdict
     for stock in portfolio_data:
         ticker = stock['ticker']
+        quant = stock['quant']
         
+        # NEW PROMPT: Force the AI to format JSON safely
         prompt = f"""
-        You are a Senior Investment Analyst at Goldman Sachs.
+        You are a Senior Quantitative Investment Analyst at Goldman Sachs.
         Ticker: {ticker}
         Broad Market News: {news_content}
         Financials: Price ${stock['price']}, PE {stock['pe_ratio']}
+        Technical Indicators: 50-Day SMA: {quant['sma_50']}, 200-Day SMA: {quant['sma_200']}, RSI (14-day): {quant['rsi']}.
         
-        Output a JSON object with 3 fields:
-        1. "summary": A 3-sentence analysis of why the stock is moving.
-        2. "verdict": A single word: "Buy", "Sell", or "Hold".
-        3. "rationale": A 1-sentence explanation of the verdict.
+        Output a valid JSON object with exactly 4 fields. 
+        CRITICAL RULES FOR JSON: 
+        - Use the literal characters \\n for paragraph breaks. Do NOT use actual line breaks inside the string values.
+        - Do NOT use double quotes inside your text (use single quotes ' instead).
         
-        Do not use Markdown. Return ONLY the JSON string.
+        1. "quant_analysis": A lengthy, in-depth 2-to-3 paragraph technical and quantitative analysis. Discuss the moving averages (trend), the RSI (momentum), and what this means for institutional buyers.
+        2. "summary": A concise 3-sentence executive summary.
+        3. "verdict": A single word: "Buy", "Sell", or "Hold".
+        4. "rationale": A 1-sentence explanation of the verdict.
+        
+        Return ONLY the JSON string.
         """
         
         raw_response = llm.invoke([HumanMessage(content=prompt)]).content
         
         try:
             cleaned_response = raw_response.replace("```json", "").replace("```", "").strip()
-            analysis = json.loads(cleaned_response)
+            # NEW: strict=False tells Python to forgive accidental line breaks!
+            analysis = json.loads(cleaned_response, strict=False)
         except Exception as e:
             print(f"⚠️ JSON Parse Error for {ticker}: {e}")
             analysis = {
+                "quant_analysis": "Quantitative data currently processing.",
                 "summary": "Analysis data temporarily unavailable.",
                 "verdict": "Hold",
                 "rationale": "Pending manual review."
@@ -119,7 +163,7 @@ def analyze_node(state: AgentState):
         verdict = analysis.get('verdict', 'Hold').upper()
         verdict_color = "#166534" if verdict == "BUY" else "#991b1b" if verdict == "SELL" else "#854d0e"
 
-        # 2. Build the classic white card for this specific stock
+        # Build the HTML with the new Quant Section and Data Mini-Grid
         cards_html += f"""
         <div style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;">
             <div style="padding: 15px 25px; border-bottom: 1px solid #e5e7eb; background-color: #f9fafb; display: flex; justify-content: space-between; align-items: center;">
@@ -128,6 +172,28 @@ def analyze_node(state: AgentState):
             </div>
             
             <div style="padding: 25px;">
+                
+                <h3 style="margin-top: 0; color: #374151; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Quantitative & Technical Analysis</h3>
+                
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <div style="flex: 1; background-color: #f3f4f6; padding: 12px; border-radius: 6px; text-align: center; border: 1px solid #e5e7eb;">
+                        <span style="display: block; font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">RSI (14-Day)</span>
+                        <span style="font-size: 18px; font-weight: bold; color: #111827;">{quant['rsi']}</span>
+                    </div>
+                    <div style="flex: 1; background-color: #f3f4f6; padding: 12px; border-radius: 6px; text-align: center; border: 1px solid #e5e7eb;">
+                        <span style="display: block; font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">50-Day SMA</span>
+                        <span style="font-size: 18px; font-weight: bold; color: #111827;">{quant['sma_50']}</span>
+                    </div>
+                    <div style="flex: 1; background-color: #f3f4f6; padding: 12px; border-radius: 6px; text-align: center; border: 1px solid #e5e7eb;">
+                        <span style="display: block; font-size: 11px; color: #6b7280; text-transform: uppercase; font-weight: bold; margin-bottom: 4px;">200-Day SMA</span>
+                        <span style="font-size: 18px; font-weight: bold; color: #111827;">{quant['sma_200']}</span>
+                    </div>
+                </div>
+
+                <p style="color: #4b5563; line-height: 1.7; margin-bottom: 30px; font-size: 14px;">
+                    {analysis.get('quant_analysis')}
+                </p>
+
                 <h3 style="margin-top: 0; color: #374151; font-size: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">Executive Summary</h3>
                 <p style="color: #4b5563; line-height: 1.6; margin-bottom: 25px; font-size: 14px;">
                     {analysis.get('summary')}
