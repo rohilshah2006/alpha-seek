@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Mail, TrendingUp, ShieldCheck, Zap, Activity } from 'lucide-react';
+import { Mail, TrendingUp, ShieldCheck, Zap, Activity, ArrowRight } from 'lucide-react';
 
 export default function Home() {
   const router = useRouter();
@@ -115,13 +115,8 @@ export default function Home() {
             <span className="font-bold font-mono text-white">N</span>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full">
-          <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-          <span className="text-xs font-medium text-green-400">Now Live: Alpha Seek v2.0</span>
-        </div>
 
-      {/* NEW: Right side of navbar */}
+        {/* Right side of navbar */}
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-2 bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
