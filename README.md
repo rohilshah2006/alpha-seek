@@ -51,6 +51,8 @@ We don't just rely on LLM hallucinations. Alpha Seek mathematically calculates r
   <img src="https://img.shields.io/badge/github%20actions-%232671E5.svg?style=for-the-badge&logo=githubactions&logoColor=white" alt="GitHub Actions" />
 </div>
 
+<br>
+
 This project bridges a modern React frontend with a heavy-duty Python AI backend.
 
 * **Frontend:** Next.js 14, React, Tailwind CSS, Lucide Icons
