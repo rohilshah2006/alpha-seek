@@ -1,5 +1,4 @@
 import yfinance as yf
-import yagmail
 import os
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -72,21 +71,44 @@ def generate_stock_chart(ticker: str):
         print(f"❌ Failed to generate chart: {e}")
         return None
 
-def send_email(to: str, subject: str, body: str, attachments=None): # <--- Added attachments arg
+import resend
+
+def send_email(to: str, subject: str, body: str, attachments=None):
     try:
-        yag = yagmail.SMTP(user=os.getenv("EMAIL_USER"), password=os.getenv("EMAIL_PASS"))
+        resend.api_key = os.getenv("RESEND_API_KEY")
         
-        # Send with HTML content and attachments
-        yag.send(
-            to=to, 
-            subject=subject, 
-            contents=[body], # Yagmail treats a list of 1 string as HTML body
-            attachments=attachments
-        )
-        print(f"📧 Email sent to {to}!")
+        # Prepare Resend payload
+        sender_email = os.getenv("SENDER_EMAIL", "Naxera AI <onboarding@resend.dev>")
+        params: resend.Emails.SendParams = {
+            # You must use a verified domain here if you have one on Resend.
+            # Otherwise it falls back to the testing email onboarding@resend.dev
+            "from": sender_email, 
+            "to": [to],
+            "subject": subject,
+            "html": body,
+        }
+
+        # Handle attachments specifically for Resend
+        if attachments:
+            resend_attachments = []
+            for filepath in attachments:
+                if os.path.exists(filepath):
+                    with open(filepath, "rb") as f:
+                        file_data = list(f.read()) # Resend accepts a list of bytes
+                    resend_attachments.append({
+                        "filename": os.path.basename(filepath),
+                        "content": file_data
+                    })
+            if resend_attachments:
+                params["attachments"] = resend_attachments
+
+        # Send the email
+        email_response = resend.Emails.send(params)
+        print(f"📧 Email sent to {to} via Resend! ID: {email_response}")
         return True
+        
     except Exception as e:
-        print(f"❌ Failed to send email: {e}")
+        print(f"❌ Failed to send email via Resend: {e}")
         return False
 
 def get_financial_metrics(ticker: str):

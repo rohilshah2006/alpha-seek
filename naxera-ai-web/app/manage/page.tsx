@@ -85,7 +85,7 @@ export default function ManagePage() {
           <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
             <span className="font-bold font-mono text-white">N</span>
           </div>
-          <span className="font-bold font-mono text-white text-xl hidden sm:block">Alpha Seek</span>
+          <span className="font-bold font-mono text-white text-xl hidden sm:block">Naxera AI</span>
         </div>
         
         <button 

@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Alpha Seek",
+  title: "Naxera AI",
   description: "Automated Financial Intelligence & Portfolio Tracking",
 };
 

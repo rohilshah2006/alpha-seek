@@ -1,8 +1,8 @@
-# 📈 Alpha Seek V3
+# 📈 Naxera AI V3
 
 **An autonomous, institutional-grade quantitative analysis engine and portfolio tracker.**
 
-Alpha Seek transforms standard stock tracking into a fully automated financial briefing system. Powered by a multi-agent AI pipeline, custom quantitative math engines, and Next.js, it delivers Goldman Sachs-level market insights straight to your inbox every morning at 6:00 AM.
+Naxera AI transforms standard stock tracking into a fully automated financial briefing system. Powered by a multi-agent AI pipeline, custom quantitative math engines, and Next.js, it delivers Goldman Sachs-level market insights straight to your inbox every morning at 6:00 AM.
 
 ---
 
@@ -10,14 +10,14 @@ Alpha Seek transforms standard stock tracking into a fully automated financial b
 
 ### 1. Multi-Agent AI Pipeline 🧠
 
-At the core of Alpha Seek is a state-machine orchestrated by LangGraph, routing data between specialized AI nodes:
+At the core of Naxera AI is a state-machine orchestrated by LangGraph, routing data between specialized AI nodes:
 * **The Researcher:** Autonomously fetches broad, real-time pre-market news using the Tavily API.
 * **The Data Collector:** Pulls live financial metrics, target prices, and P/E ratios.
 * **The Analyst:** A rigorously prompted Llama-3.3-70b model that synthesizes raw data into institutional-grade JSON reports.
 * **The Publisher:** Compiles the data into a responsive HTML email and dispatches it with customized stock charts.
 
 ### 2. The "Quant" Upgrade 📊
-We don't just rely on LLM hallucinations. Alpha Seek mathematically calculates real Technical Indicators before analysis.
+We don't just rely on LLM hallucinations. Naxera AI mathematically calculates real Technical Indicators before analysis.
 * **Trend Analysis:** Calculates 50-day and 200-day Simple Moving Averages (SMA) using a full year of historical market data.
 * **Momentum Tracking:** Computes the 14-day Relative Strength Index (RSI) to determine if an asset is overbought or oversold.
 * **Data-Driven Verdicts:** The AI Analyst is strictly forced to base its Buy/Sell/Hold verdicts on these hard quantitative outputs.
@@ -83,8 +83,8 @@ rsi = 100 - (100 / (1 + rs))
 
 **1. Clone the repo:**
 ```bash
-git clone https://github.com/rohilshah2006/alpha-seek.git
-cd alpha-seek
+git clone https://github.com/rohilshah2006/naxera-ai.git
+cd naxera-ai
 ```
 
 **2. Setup the Frontend (Next.js):**

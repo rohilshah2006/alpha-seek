@@ -4,7 +4,7 @@ langchain-community
 tavily-python
 yfinance
 python-dotenv
-yagmail
+resend
 supabase
 markdown
 matplotlib

@@ -143,7 +143,7 @@ export default function Home() {
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center gap-2 bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-full">
             <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-            <span className="text-xs font-medium text-green-400">Now Live: Alpha Seek v3.0</span>
+            <span className="text-xs font-medium text-green-400">Now Live: Naxera AI v3.0</span>
           </div>
           
           {/* Dynamic Navbar: Show Dashboard/Logout if logged in */}
@@ -183,7 +183,7 @@ export default function Home() {
             /* --- STATE 1: THE AUTH WALL --- */
             <form onSubmit={handleLogin} className="p-6 flex flex-col gap-4 animate-in fade-in zoom-in duration-300">
               <div className="text-center mb-2">
-                <h3 className="text-xl font-semibold text-white">Welcome to Alpha Seek</h3>
+                <h3 className="text-xl font-semibold text-white">Welcome to Naxera AI</h3>
                 <p className="text-sm text-white/50 mt-1">Enter your email to securely log in or sign up.</p>
               </div>
               
@@ -336,7 +336,7 @@ export default function Home() {
             <div className="sticky top-0 bg-[#0a0a0a]/95 backdrop-blur-md p-6 border-b border-white/10 flex justify-between items-start z-10">
               <div>
                 <h2 className="text-2xl font-bold text-white">System Architecture</h2>
-                <p className="text-white/50 text-sm mt-1 font-mono">Alpha Seek v3.0 • Built for Scale</p>
+                <p className="text-white/50 text-sm mt-1 font-mono">Naxera AI v3.0 • Built for Scale</p>
               </div>
               <button 
                 onClick={() => setShowTechStack(false)} 

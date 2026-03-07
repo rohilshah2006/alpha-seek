@@ -11,7 +11,7 @@ key = os.getenv("SUPABASE_SERVICE_KEY")
 supabase: Client = create_client(url, key)
 
 if __name__ == "__main__":
-    print("--- Starting Alpha Seek Agent (Portfolio Mode) ---")
+    print("--- Starting Naxera AI (Portfolio Mode) ---")
     
     # 1. Fetch all ACTIVE subscriptions
     print("📡 Fetching active subscriptions from Supabase...")
